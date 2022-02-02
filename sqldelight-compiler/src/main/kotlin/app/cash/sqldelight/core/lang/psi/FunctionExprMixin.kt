@@ -1,5 +1,6 @@
 package app.cash.sqldelight.core.lang.psi
 
+import com.squareup.kotlinpoet.BOOLEAN
 import app.cash.sqldelight.core.dialect.sqlite.SqliteType
 import app.cash.sqldelight.core.lang.IntermediateType
 import app.cash.sqldelight.core.lang.SqlDelightFile
@@ -75,13 +76,13 @@ internal class FunctionExprMixin(node: ASTNode?) : SqlFunctionExprImpl(node) {
     // json1
 
     "json", "json_remove", "json_extract", "json_insert", "json_replace", "json_set" -> {
-      IntermediateType(TEXT).nullableIf(exprList[0].type().javaType.isNullable)
+      IntermediateType(SqliteType.TEXT).nullableIf(exprList[0].type().javaType.isNullable)
     }
-    "json_array", "json_object", "json_group_array", "json_group_object" -> IntermediateType(TEXT)
-    "json_array_length" -> IntermediateType(INTEGER).nullableIf(exprList[0].type().javaType.isNullable)
-    "json_patch" -> IntermediateType(TEXT).nullableIf(exprList.any { it.type().javaType.isNullable })
-    "json_type" -> IntermediateType(TEXT).asNullable()
-    "json_valid" -> IntermediateType(INTEGER, BOOLEAN)
+    "json_array", "json_object", "json_group_array", "json_group_object" -> IntermediateType(SqliteType.TEXT)
+    "json_array_length" -> IntermediateType(SqliteType.INTEGER).nullableIf(exprList[0].type().javaType.isNullable)
+    "json_patch" -> IntermediateType(SqliteType.TEXT).nullableIf(exprList.any { it.type().javaType.isNullable })
+    "json_type" -> IntermediateType(SqliteType.TEXT).asNullable()
+    "json_valid" -> IntermediateType(SqliteType.INTEGER, BOOLEAN)
     "json_quote" -> exprList[0].type().asNonNullable()
 
     else -> when ((containingFile as SqlDelightFile).dialect) {
