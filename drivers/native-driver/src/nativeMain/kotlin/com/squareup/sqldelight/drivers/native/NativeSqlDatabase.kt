@@ -30,7 +30,6 @@ sealed class ConnectionWrapper : SqlDriver {
     binders: (SqlPreparedStatement.() -> Unit)?
   ) {
     accessConnection(false) { isOwned ->
-      try {
         val statement = value.useStatement(identifier, sql)
         if (binders != null) {
           try {
@@ -38,6 +37,7 @@ sealed class ConnectionWrapper : SqlDriver {
           } catch (t: Throwable) {
             statement.resetStatement()
             value.clearIfNeeded(identifier, statement)
+            if (isOwned) { release() }
             throw t
           }
         }
@@ -45,11 +45,9 @@ sealed class ConnectionWrapper : SqlDriver {
         statement.execute()
         statement.resetStatement()
         value.clearIfNeeded(identifier, statement)
-      } finally {
-          if (isOwned) {
-            release()
-          }
-      }
+        if (isOwned) {
+          release()
+        }
     }
   }
 
@@ -82,7 +80,9 @@ sealed class ConnectionWrapper : SqlDriver {
         if (value.closed)
           statement.finalizeStatement()
         value.safePut(identifier, statement)
-        release()
+        if (isOwned) {
+          release()
+        }
       }
     }
   }
