@@ -214,14 +214,14 @@ class NativeSqliteDriver(
     return if (readOnly) {
       // Code intends to read, which doesn't need to block
       if (mine != null) {
-        mine.value.block(false)
+        mine.block(false)
       } else {
         readerPool.borrowEntry().block(true)
       }
     } else {
       // Code intends to write, for which we're managing locks in code
       if (mine != null) {
-        mine.value.block(false)
+        mine.block(false)
       } else {
         transactionPool.borrowEntry().block(true)
       }
