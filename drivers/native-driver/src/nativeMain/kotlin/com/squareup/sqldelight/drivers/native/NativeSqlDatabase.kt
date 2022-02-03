@@ -207,7 +207,7 @@ class NativeSqliteDriver(
    */
   override fun <R> accessConnection(
     readOnly: Boolean,
-    block: ThreadConnection.(isOwned: Boolean) -> R
+    block: Borrowed<ThreadConnection>.(isOwned: Boolean) -> R
   ): R {
     val mine = borrowedConnectionThread.get()
 
@@ -216,14 +216,14 @@ class NativeSqliteDriver(
       if (mine != null) {
         mine.value.block(false)
       } else {
-        readerPool.borrowEntry().value.block(true)
+        readerPool.borrowEntry().block(true)
       }
     } else {
       // Code intends to write, for which we're managing locks in code
       if (mine != null) {
         mine.value.block(false)
       } else {
-        transactionPool.borrowEntry().value.block(true)
+        transactionPool.borrowEntry().block(true)
       }
     }
   }
@@ -262,17 +262,22 @@ internal class SqliterWrappedConnection(
   private val threadConnection: ThreadConnection
 ) : ConnectionWrapper(),
   SqlDriver {
+
   override fun currentTransaction(): Transacter.Transaction? = threadConnection.transaction.value
 
   override fun newTransaction(): Transacter.Transaction = threadConnection.newTransaction()
 
   override fun <R> accessConnection(
     readOnly: Boolean,
-    block: ThreadConnection.() -> R
-  ): R = threadConnection.block()
+    block: Borrowed<ThreadConnection>.(isOwned: Boolean) -> R
+  ): R = BorrowedWrapper(threadConnection).block(false)
 
   override fun close() {
     threadConnection.cleanUp()
+  }
+
+  internal class BorrowedWrapper(override val value: ThreadConnection): Borrowed<ThreadConnection> {
+    override fun release() { }
   }
 }
 
